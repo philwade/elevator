@@ -2,7 +2,7 @@ module Main exposing (Msg(..), main, update, view)
 
 import Browser
 import Html exposing (Html, a, button, div, span, text)
-import Html.Attributes exposing (href)
+import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
 import Time
 
@@ -149,7 +149,7 @@ renderElevatorShaft floorCount (Elevator _ elevatorFloor direction _) =
                     , span [] [ a [ onClick (Call floor), href "#" ] [ text "call" ] ]
                     ]
     in
-    span [] <|
+    span [ class "column" ] <|
         List.map renderFloor (List.range 1 floorCount |> List.reverse)
 
 
@@ -195,8 +195,8 @@ closestHelper floor (Elevator eId eFloor _ _) ( id, distance ) =
         Nothing ->
             ( Just eId, thisDistance )
 
-        Just d ->
-            if thisDistance < d then
+        Just _ ->
+            if thisDistance < distance then
                 ( Just eId, thisDistance )
 
             else
