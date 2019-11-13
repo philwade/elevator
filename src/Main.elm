@@ -4,21 +4,29 @@ import Browser
 import Html exposing (Html, a, button, div, span, text)
 import Html.Attributes exposing (href)
 import Html.Events exposing (onClick)
+import Time
 
 
-initial : Int -> Model
-initial elevators =
-    { floors = 10
-    , elevators = List.map (\i -> Elevator i 1 Stationary None) <| List.range 1 elevators
-    }
+initial : () -> ( Model, Cmd Msg )
+initial _ =
+    let
+        elevators =
+            2
+    in
+    ( { floors = 10
+      , elevators = List.map (\i -> Elevator i 1 Stationary None) <| List.range 1 elevators
+      }
+    , Cmd.none
+    )
 
 
 main =
-    Browser.sandbox { init = initial 2, update = update, view = view }
+    Browser.element { init = initial, update = update, view = view, subscriptions = subscriptions }
 
 
 type Msg
     = Call Int
+    | Tick Time.Posix
 
 
 type alias Building =
@@ -54,11 +62,41 @@ type alias Model =
     Building
 
 
-update : Msg -> Model -> Model
+update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
         Call floor ->
-            callElevator floor model
+            ( callElevator floor model, Cmd.none )
+
+        Tick _ ->
+            ( timeTick model, Cmd.none )
+
+
+timeTick : Building -> Building
+timeTick { floors, elevators } =
+    { floors = floors
+    , elevators =
+        List.map
+            (\(Elevator id currentFloor direction destination) ->
+                case destination of
+                    Floor x ->
+                        if currentFloor == x then
+                            Elevator id currentFloor Stationary None
+
+                        else if direction == Up && currentFloor < floors then
+                            Elevator id (currentFloor + 1) direction destination
+
+                        else if direction == Down && floors > 1 then
+                            Elevator id (currentFloor - 1) direction destination
+
+                        else
+                            Elevator id currentFloor direction destination
+
+                    None ->
+                        Elevator id currentFloor direction destination
+            )
+            elevators
+    }
 
 
 view : Model -> Html Msg
@@ -198,3 +236,8 @@ updateElevatorDirection elevators id direction destination =
                 Elevator eId floor eDirection eDestination
         )
         elevators
+
+
+subscriptions : Model -> Sub Msg
+subscriptions _ =
+    Time.every 1000 Tick
