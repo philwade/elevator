@@ -11,10 +11,11 @@ initial : () -> ( Model, Cmd Msg )
 initial _ =
     let
         elevators =
-            2
+            3
     in
     ( { floors = 10
       , elevators = List.map (\i -> Elevator i 1 Stationary None) <| List.range 1 elevators
+      , queuedRequests = []
       }
     , Cmd.none
     )
@@ -32,6 +33,7 @@ type Msg
 type alias Building =
     { floors : Int
     , elevators : List Elevator
+    , queuedRequests : List Int
     }
 
 
@@ -73,7 +75,7 @@ update msg model =
 
 
 timeTick : Building -> Building
-timeTick { floors, elevators } =
+timeTick { floors, elevators, queuedRequests } =
     { floors = floors
     , elevators =
         List.map
@@ -96,6 +98,7 @@ timeTick { floors, elevators } =
                         Elevator id currentFloor direction destination
             )
             elevators
+    , queuedRequests = queuedRequests
     }
 
 
@@ -158,17 +161,23 @@ callElevator floor building =
     let
         closestElevatorId =
             findClosestElevator floor building
-
-        direction =
-            findDirection closestElevatorId floor building.elevators
-
-        newElevators =
-            updateElevatorDirection building.elevators closestElevatorId direction (Floor floor)
     in
-    { building | elevators = newElevators }
+    case closestElevatorId of
+        Nothing ->
+            { building | queuedRequests = floor :: building.queuedRequests }
+
+        Just id ->
+            let
+                direction =
+                    findDirection id floor building.elevators
+
+                newElevators =
+                    updateElevatorDirection building.elevators id direction (Floor floor)
+            in
+            { building | elevators = newElevators }
 
 
-findClosestElevator : Floor -> Building -> Id
+findClosestElevator : Floor -> Building -> Maybe Id
 findClosestElevator floor { elevators } =
     let
         closest =
@@ -177,30 +186,29 @@ findClosestElevator floor { elevators } =
         ( elevatorId, _ ) =
             List.foldl closest ( Nothing, List.length elevators ) elevators
     in
-    case elevatorId of
-        Nothing ->
-            -1
-
-        Just id ->
-            id
+    elevatorId
 
 
 closestHelper : Floor -> Elevator -> ( Maybe Id, Int ) -> ( Maybe Id, Int )
-closestHelper floor (Elevator eId eFloor _ _) ( id, distance ) =
+closestHelper floor (Elevator eId eFloor _ destination) ( id, distance ) =
     let
         thisDistance =
             abs (eFloor - floor)
     in
-    case id of
-        Nothing ->
-            ( Just eId, thisDistance )
+    if destination /= None then
+        ( id, distance )
 
-        Just _ ->
-            if thisDistance < distance then
+    else
+        case id of
+            Nothing ->
                 ( Just eId, thisDistance )
 
-            else
-                ( id, distance )
+            Just _ ->
+                if thisDistance < distance then
+                    ( Just eId, thisDistance )
+
+                else
+                    ( id, distance )
 
 
 findDirection : Id -> Floor -> List Elevator -> Direction
