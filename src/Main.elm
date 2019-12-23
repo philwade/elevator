@@ -1,6 +1,8 @@
 module Main exposing (Msg(..), main, update, view)
 
 import Browser
+import Draw
+import Elevator exposing (..)
 import Html exposing (Html, a, button, div, span, text)
 import Html.Attributes exposing (class, href)
 import Html.Events exposing (onClick)
@@ -13,7 +15,7 @@ initial _ =
         elevators =
             3
     in
-    ( { floors = 10
+    ( { floors = 3
       , elevators = List.map (\i -> Elevator i 1 Stationary None) <| List.range 1 elevators
       , queuedRequests = []
       }
@@ -35,29 +37,6 @@ type alias Building =
     , elevators : List Elevator
     , queuedRequests : List Int
     }
-
-
-type Direction
-    = Up
-    | Down
-    | Stationary
-
-
-type alias Floor =
-    Int
-
-
-type alias Id =
-    Int
-
-
-type DestinationFloor
-    = Floor Int
-    | None
-
-
-type Elevator
-    = Elevator Id Floor Direction DestinationFloor
 
 
 type alias Model =
@@ -115,12 +94,8 @@ renderBuilding building =
 
         elevators =
             building.elevators
-
-        render =
-            renderElevatorShaft floorCount
     in
-    div [] <|
-        List.map render elevators
+    Draw.building floorCount elevators
 
 
 renderDirection : Direction -> String
@@ -134,26 +109,6 @@ renderDirection dir =
 
         Stationary ->
             ""
-
-
-renderElevatorShaft : Int -> Elevator -> Html Msg
-renderElevatorShaft floorCount (Elevator _ elevatorFloor direction _) =
-    let
-        renderFloor floor =
-            if floor == elevatorFloor then
-                div []
-                    [ text "elevator"
-                    , span [] [ a [ onClick (Call floor), href "#" ] [ text "call" ], text <| renderDirection direction ]
-                    ]
-
-            else
-                div []
-                    [ text "empty floor"
-                    , span [] [ a [ onClick (Call floor), href "#" ] [ text "call" ] ]
-                    ]
-    in
-    span [ class "column" ] <|
-        List.map renderFloor (List.range 1 floorCount |> List.reverse)
 
 
 callElevator : Floor -> Building -> Building
