@@ -95,7 +95,7 @@ renderBuilding building =
         elevators =
             building.elevators
     in
-    Draw.building floorCount elevators
+    Draw.building floorCount elevators Call
 
 
 renderDirection : Direction -> String

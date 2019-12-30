@@ -2,43 +2,104 @@ module Draw exposing (building, floor, shaft)
 
 import Elevator exposing (..)
 import Html
+import Html.Attributes
 import Svg exposing (..)
 import Svg.Attributes exposing (..)
+import Svg.Events exposing (onClick)
 
 
 buildingWidth =
-    800 + 64
+    800
 
 
 buildingHeight =
-    800 + 64
+    800
 
 
-downArrow =
-    Svg.path [ d "M14.496 5.975l-.001 14.287-6.366-6.367L6 16.021l10.003 10.004L26 16.029 23.871 13.9l-6.366 6.368V5.977z" ] []
+downArrow call =
+    Svg.path [ d "M 14.496 5.975 l -.001 14.287 -6.366 -6.367 L 6 16.021 l 10.003 10.004 L 26 16.029 23.871 13.9 l -6.366 6.368 V 5.977 z", onClick call ] []
 
 
-upArrow =
-    Svg.path [ d "M17.504 26.025l.001-14.287 6.366 6.367L26 15.979 15.997 5.975 6 15.971 8.129 18.1l6.366-6.368v14.291z" ] []
+upArrow call =
+    Svg.path [ d "M 47.504 26.025 l .001 -14.287 6.366 6.367 L 56 15.979 45.997 5.975 36 15.971 38.129 18.1 l 6.366 -6.368 v 14.291 z", onClick call ] []
 
 
-building : Int -> List Elevator -> Html.Html msg
-building floorCount elevators =
+renderControls call =
+    [ rect
+        [ width "25"
+        , height "25"
+        , stroke "black"
+        , strokeWidth "2"
+        , fill "transparent"
+        , x "4"
+        , y "3"
+        , onClick call
+        ]
+        []
+    , rect
+        [ width "25"
+        , height "25"
+        , stroke "black"
+        , strokeWidth "2"
+        , fill "transparent"
+        , x "34"
+        , y "3"
+        , onClick call
+        ]
+        []
+    , downArrow call
+    , upArrow call
+    ]
+
+
+building : Int -> List Elevator -> (Int -> msg) -> Html.Html msg
+building floorCount elevators callFunc =
     let
         shaftWidth =
             buildingWidth // List.length elevators
 
         render =
             shaft floorCount shaftWidth
+
+        renderedElevators =
+            List.concat <|
+                List.indexedMap render elevators
+
+        controlPanel =
+            controls floorCount callFunc
     in
-    svg
-        [ width <| String.fromInt buildingWidth
-        , height <| String.fromInt buildingHeight
-        , fill "white"
-        ]
-    <|
-        List.concat <|
-            List.indexedMap render elevators
+    Html.div [] <|
+        List.concat
+            [ [ svg
+                    [ width <| String.fromInt buildingWidth
+                    , height <| String.fromInt buildingHeight
+                    , fill "white"
+                    ]
+                    renderedElevators
+              ]
+            , controlPanel
+            ]
+
+
+controls : Int -> (Int -> msg) -> List (Html.Html msg)
+controls floorCount callFunc =
+    let
+        floorHeight =
+            buildingHeight // floorCount
+
+        onefloor floorNumber =
+            svg
+                [ width "100"
+                , height <| String.fromInt floorHeight
+                , Html.Attributes.style "left" <| String.fromInt buildingWidth
+                , Html.Attributes.style "top" <| String.fromInt <| (buildingHeight - (floorNumber * floorHeight))
+                , Html.Attributes.style "position" "absolute"
+                ]
+                (renderControls (callFunc floorNumber))
+    in
+    List.map
+        onefloor
+        (List.range 1 floorCount)
 
 
 shaft : Int -> Int -> Int -> Elevator -> List (Html.Html msg)
