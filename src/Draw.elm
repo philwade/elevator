@@ -125,54 +125,51 @@ floor elevatorFloor xOffset floorHeight floorWidth thisFloor =
     let
         yOffset =
             buildingHeight - (thisFloor * floorHeight)
+
+        wallIncrement =
+            10
+
+        increment =
+            floorWidth // wallIncrement
+
+        secondWallFactor =
+            wallIncrement - 1
+
+        elevatorFactor =
+            wallIncrement - 2
+
+        emptyFloor =
+            [ rect
+                [ width <| String.fromInt increment
+                , height <| String.fromInt floorHeight
+                , fill "grey"
+                , x <| String.fromInt xOffset
+                , y <| String.fromInt yOffset
+                ]
+                []
+            , rect
+                [ width <| String.fromInt increment
+                , height <| String.fromInt floorHeight
+                , fill "grey"
+                , x <| String.fromInt (xOffset + (increment * secondWallFactor))
+                , y <| String.fromInt yOffset
+                ]
+                []
+            ]
     in
     if thisFloor == elevatorFloor then
-        renderElevator xOffset yOffset floorWidth floorHeight
+        List.append emptyFloor <|
+            [ rect
+                [ width <| String.fromInt <| increment * elevatorFactor
+                , height <| String.fromInt floorHeight
+                , x <| String.fromInt (xOffset + increment)
+                , y <| String.fromInt yOffset
+                , stroke "black"
+                , strokeWidth "5"
+                , fill "transparent"
+                ]
+                []
+            ]
 
     else
-        renderEmptyFloor xOffset yOffset floorWidth floorHeight
-
-
-renderElevator : Int -> Int -> Int -> Int -> List (Html.Html msg)
-renderElevator xOffset yOffset w h =
-    [ rect
-        [ width <| String.fromInt w
-        , height <| String.fromInt h
-        , x <| String.fromInt xOffset
-        , y <| String.fromInt yOffset
-        , fill "black"
-        ]
-        []
-    ]
-
-
-renderEmptyFloor : Int -> Int -> Int -> Int -> List (Html.Html msg)
-renderEmptyFloor xOffset yOffset w h =
-    let
-        quarter =
-            w // 4
-    in
-    [ rect
-        [ width <| String.fromInt quarter
-        , height <| String.fromInt h
-        , fill "red"
-        , x <| String.fromInt xOffset
-        , y <| String.fromInt yOffset
-        ]
-        []
-    , rect
-        [ width <| String.fromInt <| quarter + quarter
-        , height <| String.fromInt h
-        , x <| String.fromInt (xOffset + quarter)
-        , y <| String.fromInt yOffset
-        ]
-        []
-    , rect
-        [ width <| String.fromInt quarter
-        , height <| String.fromInt h
-        , fill "red"
-        , x <| String.fromInt (xOffset + (quarter * 3))
-        , y <| String.fromInt yOffset
-        ]
-        []
-    ]
+        emptyFloor

@@ -15,7 +15,7 @@ initial _ =
         elevators =
             3
     in
-    ( { floors = 3
+    ( { floors = 30
       , elevators = List.map (\i -> Elevator i 1 Stationary None) <| List.range 1 elevators
       , queuedRequests = []
       }
